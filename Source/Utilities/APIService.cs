@@ -35,7 +35,35 @@ public class ApiService
     {
         return Guid.NewGuid().ToString();
     }
+    public void RedirectTo(string url)
+    {
+         if (_isRedirecting) return; // Prevent multiple redirects.
 
+        _isRedirecting = true; // Mark as redirecting.
+        try
+        {
+            // Start the default browser with the specified URL.
+            if(_isRedirecting){
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true,// Open in the default browser.
+                });
+                _isRedirecting = false;
+            }
+        
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while trying to open the browser: {ex.Message}");
+        }
+        finally
+        {
+            _isRedirecting = false; // Mark as not redirecting, even if there was an error.
+        }
+
+    }
     // Redirects the user to the login page.
     public void RedirectToLogin()
     {
@@ -150,40 +178,60 @@ public class ApiService
     // Fetches the user profile using the stored JWT token.
     public async Task<User> GetUserProfile()
     {
-        var response = await _client.GetAsync($"{_apiBaseUrl}/api/user/{userAuthToken}/profile").ConfigureAwait(false);
-        string json = response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync() : null; // Handle response.
-
-        if (json == null)
+        try
         {
-            StoreToken(null); // Store null token on failure.
-            return null; // Return null on failure.
+
+            var response = await _client.GetAsync($"{_apiBaseUrl}/api/user/{userAuthToken}/profile").ConfigureAwait(false);
+            string json = response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync() : null; // Handle response.
+
+            if (json == null)
+            {
+                StoreToken(null); // Store null token on failure.
+                return null; // Return null on failure.
+            }
+
+            var jsonDoc = JsonDocument.Parse(json); // Parse the user profile JSON.
+
+            return new User(
+                jsonDoc.RootElement.GetProperty("id").GetInt32(),
+                jsonDoc.RootElement.GetProperty("username").ToString(),
+                jsonDoc.RootElement.GetProperty("highScore").GetInt32()
+            ); // Create and return User object.
         }
-
-        var jsonDoc = JsonDocument.Parse(json); // Parse the user profile JSON.
-
-        return new User(
-            jsonDoc.RootElement.GetProperty("id").GetInt32(),
-            jsonDoc.RootElement.GetProperty("username").ToString(),
-            jsonDoc.RootElement.GetProperty("highScore").GetInt32()
-        ); // Create and return User object.
+        catch (Exception)
+        {
+            Console.WriteLine("You are offline.");
+            return new User();
+        }
     }
 
     // Updates the user's high score in the API.
     public async Task UpdateHighScore(int highScore)
     {
-        var jsonContent = JsonContent.Create(new { highScore }); // Create JSON content for the request.
+        try
+        {
 
-        // Send PATCH request to update the high score.
-        var response = await _client.PatchAsync($"{_apiBaseUrl}/api/user/{userAuthToken}/highscore", jsonContent).ConfigureAwait(false);
+            var jsonContent = JsonContent.Create(new { highScore }); // Create JSON content for the request.
+
+            // Send PATCH request to update the high score.
+            var response = await _client.PatchAsync($"{_apiBaseUrl}/api/user/{userAuthToken}/highscore", jsonContent).ConfigureAwait(false);
+
+               if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine(response.Content.ToString()); // Log success.
+                }
+                else
+                {
+                    Console.WriteLine("Failed to update the high score"); // Handle failure.
+                }
+                 
+        }
+        catch (Exception)
+        {
+            //Offline
+           
+        }
 
         // Handle the response.
-        if (response.IsSuccessStatusCode)
-        {
-            Console.WriteLine(response.Content.ToString()); // Log success.
-        }
-        else
-        {
-            Console.WriteLine("Failed to update the high score"); // Handle failure.
-        }
     }
 }

@@ -27,7 +27,6 @@ namespace Entities.GameStates
         private SpriteFont _link;
         private TokenStorage _tokenStorage;
         private Button _leaderboardButton;
-        private Button _feedbackButton;
         private Button _exitButton;
         private Button _gearButton;
         private Button _globeButton;
@@ -83,7 +82,6 @@ namespace Entities.GameStates
 
             _leaderboardButton = new Button(_buttonTexture, _regular, "LEADERBOARD", new Rectangle(0, 0, buttonWidth, buttonHeight), new Vector2((ScreenWidth / 2) - buttonWidth, buttonYStart + buttonHeight + 80), Color.Black, Color.Black, 2);
 
-            _feedbackButton = new Button(_buttonTexture, _regular, "FEEDBACK", new Rectangle(0, 0, buttonWidth, buttonHeight), new Vector2((ScreenWidth / 2) - buttonWidth, buttonYStart + buttonSpacing + buttonHeight + 80), Color.Black, Color.Black, 2);
 
             _exitButton = new Button(_buttonTexture, _regular, "EXIT", new Rectangle(0, 0, buttonWidth, buttonHeight), new Vector2((ScreenWidth / 2) - buttonWidth, buttonYStart + 2 * buttonSpacing + buttonHeight + 80), Color.Black, Color.Black, 2);
 
@@ -109,7 +107,6 @@ namespace Entities.GameStates
         {
             // Update buttons
             _leaderboardButton.Update(gameTime, isActive);
-            _feedbackButton.Update(gameTime, isActive);
             _exitButton.Update(gameTime, isActive);
             _gearButton.Update(gameTime, isActive);
             _globeButton.Update(gameTime, isActive);
@@ -152,7 +149,11 @@ namespace Entities.GameStates
                     }
                 }
             }
-
+         /*    if(_leaderboardButton.IsClicked && !_isRedirecting)
+            {
+                _apiService.RedirectTo("https://timetower-web.vercel.app/leaderboard");
+                _isRedirecting = false;
+            } */
             // Process callback after redirection
             if (_apiService.IsCallbackReceived)
             {
@@ -179,7 +180,7 @@ namespace Entities.GameStates
         /// <summary>
         /// Invokes the OnGameExit event.
         /// </summary>
-        private void ExitGame() => OnGameExit?.Invoke();
+        private void ExitGame() => OnGameExit.Invoke();
 
         /// <summary>
         /// Draws the main menu elements and buttons to the screen.
@@ -196,7 +197,6 @@ namespace Entities.GameStates
             spriteBatch.DrawString(_link, "PRESS ANY KEY TO START", _pressAnyKeyPosition, Color.Black);
 
             _leaderboardButton.Draw(spriteBatch);
-            _feedbackButton.Draw(spriteBatch);
             _exitButton.Draw(spriteBatch);
 
             _gearButton.Draw(spriteBatch);
@@ -209,14 +209,10 @@ namespace Entities.GameStates
         /// </summary>
         public async void Enter()
         {
-            _hasStarted = false;
-            _leaderboardButton.SceneName = "Leaderboard";
-            
+            _hasStarted = false;            
             _gearButton.SceneName = "Settings";
 
             
-            _leaderboardButton.OnSceneChanged += OnSceneChanged;
-            _feedbackButton.OnSceneChanged += OnSceneChanged;
             _gearButton.OnSceneChanged += OnSceneChanged;
 
             _highScoreManager.LoadHighScore();
@@ -229,8 +225,6 @@ namespace Entities.GameStates
         /// </summary>
         public void Exit()
         {
-            _leaderboardButton.OnSceneChanged -= OnSceneChanged;
-            _feedbackButton.OnSceneChanged -= OnSceneChanged;
             _gearButton.OnSceneChanged -= OnSceneChanged;
         }
     }

@@ -179,6 +179,11 @@ namespace TimeTowerGame
         /// <summary>
         /// Event handler that triggers when the game is exited.
         /// </summary>
-        private void OnGameExit() => Exit();
+        private void OnGameExit()
+        {
+            #if !NEXTFX_CORE
+                Exit();
+            #endif
+        } 
     }
 }
